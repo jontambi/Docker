@@ -1,0 +1,32 @@
+# Contenedor Postfix, Dovecot y Roundcube
+#
+# Version 0.0.1
+
+FROM centos
+
+LABEL Description="Esta imagen es usada para el servicio de MAIL" VERSION="1.0"
+
+#Instalacion de paquetes Postfix
+RUN yum remove sendmail && yum install epel-release && yum update
+RUN yum install -y postfix
+
+#Desabilatar SELINUX
+RUN sed -i "s/SELINUX=enforcing/SELINUX=disable/g" /etc/selinux/config
+
+#Configuracion de Hostname
+RUN systemctl set-hostname srvmail
+RUN echo "127.0.0.1 srvmail.example.com srvmail localhost" >> /etc/hosts
+
+#Configuracion de Postfix
+RUN postconf -e myhostname=srvmail.example.com
+RUN postconf -e mydestination="srvmail.example.com, example.com, localhost.localdomain, localhost"
+RUN postconf -e mail_spool_directory="/var/spool/mail/"
+RUN postconf -e mailbox_command=""
+
+#Instalacion de herramienta para log
+RUN yum install -y syslog-ng
+
+#Reiniciar Postfix
+RUN systemctl restart postfix.service
+
+EXPOSE 25 80 110 143 465 993 995
